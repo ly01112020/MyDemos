@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星空</title>
+    <style>
+        *{padding: 0;margin: 0;}
+        body{width: 375px;margin: 0 auto;min-height:667px;background-color: #1e1c34;display: block;}
+        .view-front,.view-bg{position: absolute;width: 100%;height: 100%;left:0;top:0}
+        .view-bg{z-index:1;overflow: hidden;}
+        .view-bg canvas{display: block;border:none;}
+        .view-front{z-index: 2}
+
+        .title-01{position: absolute;top:220px;left:0;right: 0;width: 100%;color: #f1f1f1;text-align: center;
+            -webkit-transition: all 1.6s ease;
+            -moz-transition: all 1.6s ease;
+            -ms-transition: all 1.6s ease;
+            -o-transition: all 1.6s ease;
+            transition: all 1.6s ease;
+        }
+        .active .title-01{top:300px;}
+
+        .btn-public{display: inline-block;min-width: 80px;padding: 0 15px;line-height: 26px;background-color: #7c93ff;font-size: 13px;text-decoration: none;color:#fff;text-align: center;}
+        .view-front .btn-public{position: absolute;bottom:50px;left:50%;opacity: 0;
+            -webkit-transition: all 1s;
+            -moz-transition: all 1s;
+            -ms-transition: all 1s;
+            -o-transition: all 1s;
+            transition: all 1s;
+
+            -webkit-transform: translateX(-50%);
+            -moz-transform: translateX(-50%);
+            -ms-transform: translateX(-50%);
+            -o-transform: translateX(-50%);
+            transform: translateX(-50%);}
+        .view-front.active .btn-public{bottom:20px;opacity: 1}
+    </style>
+</head>
+<body>
+    <div class="view-front">
+        <div class="title-01">
+            这是一次不一样的学习体验 <br> 愿你能获取更多的知识
+        </div>
+        <a href="javascript:void(0)" class="btn-public">点击此处继续</a>
+    </div>
+    <div class="view-bg">
+        <canvas id="bg-canvas"></canvas>
+    </div>
+</body>
+<script type="text/javascript">
+
+
+    var width=window.screen.availWidth;
+    var height=window.screen.availHeight;
+
+    (function drawBgStar(isRun){
+        if(!isRun)return false;
+        var bgCanvas=document.getElementById("bg-canvas");
+        bgCanvas.setAttribute('width',width);
+        bgCanvas.setAttribute('height',height);
+        var ctx=bgCanvas.getContext("2d");
+        var viewCenter={x:width/2,y:height/2},
+            timestamp=0,
+            firstAnimEnd=130,
+            starSize=200,
+            starArr=[],
+            clearAnimation=false,
+            animationId=0;
+
+        function circleOut(t) {
+            return Math.sqrt(1 - --t * t);
+        }
+
+        function expInOut(t) {
+            return ((t *= 2) <= 1 ? Math.pow(2, 10 * t - 10) : 2 - Math.pow(2, 10 - 10 * t)) / 2;
+        }
+
+        for(var i=0;i<starSize;i++){
+            var star={
+                r:getRandom(4,1),     //当前星圆半径
+                x:width*2-getRandom(width*3,2),  //坐标 x
+                y:height*2-getRandom(height*3,2),//坐标 y
+                direction:0,//0-360   //相对center 圆点角度 需要根据 x,y 计算
+                cr:0,                 //相对于center 的长度
+                speed:getRandom(.9,2),//速度
+                color:'#f2f2f2'       //填充色
+            };
+
+            star.getNextPosition=function(speed,t){
+                var x1=viewCenter.x,
+                    y1=viewCenter.y,
+                    x2=this.x,
+                    y2=this.y;
+                var tx=expInOut(t/firstAnimEnd);
+                var xItem=(x2-x1)/speed*tx,
+                    yItem=(y2-y1)/speed*tx;
+                return {x:x2-xItem,y:y2-yItem}
+            }
+            starArr.push(star)
+        }
+        var reader=function(){
+            ctx.restore();
+            timestamp++;
+            if(timestamp===100){
+                document.querySelector('.view-front').className='view-front active'
+            }
+            ctx.clearRect(0,0,width,height);
+            for(var i=0;i<starArr.length;i++){
+                var starItem=starArr[i];
+                ctx.fillStyle=starItem.color;
+                ctx.beginPath();
+                ctx.arc(starItem.x,starItem.y,starItem.r,0,Math.PI*180,true);
+                ctx.closePath();
+                ctx.fill();
+                if(timestamp<firstAnimEnd&&timestamp>20){
+                    var newPosition=starItem.getNextPosition(100,timestamp);
+                    starItem.x=newPosition.x;
+                    starItem.y=newPosition.y;
+                    starItem.r-=.02;
+                    if(starItem.r<=0.5){
+                        starItem.r=.5;
+                    }
+                }else if(timestamp<firstAnimEnd+20){
+
+                }else{
+                    starItem.x -= 1 * starItem.speed;
+                    if (starItem.x < -width) {
+                        starItem.x = width;
+                    }
+                }
+            }
+            ctx.restore();
+            if(clearAnimation){
+                window.cancelAnimationFrame(animationId);
+            }else{
+                animationId=window.requestAnimationFrame(reader);
+            }
+        }
+
+        window.requestAnimationFrame(reader);
+
+        function getRandom(range,fixed){
+            if(fixed==null){
+                fixed=1;
+            }
+            return +(Math.random()*range).toFixed(fixed)
+        }
+    })(true);
+
+
+    (function() {
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+        for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+            window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+            window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+        }
+        if (!window.requestAnimationFrame) window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() {
+                callback(currTime + timeToCall);
+            }, timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+        if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+    }());
+</script>
+</html>
